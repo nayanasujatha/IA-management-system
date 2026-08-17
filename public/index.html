@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>IA Management System</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --ink: #0f0f13;
+    --surface: #16161d;
+    --card: #1e1e28;
+    --border: #2a2a38;
+    --muted: #6b6b80;
+    --text: #e8e8f0;
+    --accent: #7c6af7;
+    --accent2: #f76a8c;
+    --accent3: #6af7c4;
+    --accent4: #f7c46a;
+    --pass: #4ade80;
+    --fail: #f87171;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--ink); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+  .mono { font-family: 'Space Mono', monospace; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; }
+  .btn { border-radius: 8px; padding: 8px 16px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s; border: none; font-family: 'DM Sans', sans-serif; }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #6a58e5; }
+  .btn-danger { background: transparent; color: var(--fail); border: 1px solid var(--fail); }
+  .btn-danger:hover { background: var(--fail); color: white; }
+  .btn-success { background: var(--accent3); color: #0f2920; }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .input { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 14px; color: var(--text); font-family: 'DM Sans', sans-serif; width: 100%; transition: border-color 0.15s; outline: none; }
+  .input:focus { border-color: var(--accent); }
+  .input::placeholder { color: var(--muted); }
+  .label { font-size: 12px; color: var(--muted); margin-bottom: 6px; display: block; text-transform: uppercase; letter-spacing: 0.05em; font-family: 'Space Mono', monospace; }
+  .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+  .badge-pass { background: rgba(74,222,128,0.15); color: var(--pass); }
+  .badge-fail { background: rgba(248,113,113,0.15); color: var(--fail); }
+  .sidebar-link { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 8px; cursor: pointer; transition: all 0.15s; color: var(--muted); font-size: 14px; }
+  .sidebar-link:hover { background: var(--border); color: var(--text); }
+  .sidebar-link.active { background: var(--accent); color: white; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; padding: 10px 14px; border-bottom: 1px solid var(--border); font-family: 'Space Mono', monospace; font-weight: 400; }
+  td { padding: 12px 14px; border-bottom: 1px solid rgba(42,42,56,0.5); font-size: 14px; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(42,42,56,0.3); }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .modal { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; max-width: 480px; width: 100%; max-height: 90vh; overflow-y: auto; }
+  .stat-card { padding: 20px; border-radius: 12px; }
+  .glow { box-shadow: 0 0 30px rgba(124,106,247,0.15); }
+  .mark-fail { color: var(--fail); font-weight: 600; }
+  .mark-pass { color: var(--pass); }
+  .toast { position: fixed; bottom: 24px; right: 24px; z-index: 100; padding: 14px 20px; border-radius: 10px; font-size: 14px; font-weight: 500; animation: slideIn 0.3s ease; }
+  @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .pulse { animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+const API = '';
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+function Toast({ msg, type, onClose }) {
+  useEffect(() => { const t = setTimeout(onClose, 3000); return () => clearTimeout(t); }, []);
+  const bg = type === 'error' ? '#ef4444' : type === 'warning' ? '#f59e0b' : '#22c55e';
+  return <div className="toast" style={{ background: bg, color: 'white' }}>{msg}</div>;
+}
+
+// ── Modal ──────────────────────────────────────────────────────────────────
+function Modal({ title, onClose, children }) {
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-lg font-bold mono">{title}</h2>
+          <button onClick={onClose} className="text-2xl leading-none" style={{color:'var(--muted)'}}>&times;</button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ── Input helpers ──────────────────────────────────────────────────────────
+function Field({ label, error, children }) {
+  return (
+    <div>
+      <label className="label">{label}</label>
+      {children}
+      {error && <p style={{color:'var(--fail)',fontSize:12,marginTop:4}}>{error}</p>}
+    </div>
+  );
+}
+
+// ── Validate ──────────────────────────────────────────────────────────────
+function validate(data, rules) {
+  const errs = {};
+  if (rules.name && !/^[A-Za-z\s.]+$/.test(data.name || '')) errs.name = 'Letters only';
+  if (rules.phone && !/^\d{10,}$/.test(data.phone || '')) errs.phone = 'Minimum 10 digits';
+  if (rules.email && !/@/.test(data.email || '')) errs.email = 'Must contain @';
+  if (rules.id && !/^[A-Za-z0-9]+$/.test(data.id || '')) errs.id = 'Alphanumeric only';
+  if (rules.marks) {
+    ['ia1','ia2','ia3'].forEach(k => {
+      const v = +data[k];
+      if (data[k] === '' || data[k] === undefined || isNaN(v) || v < 0 || v > 100) errs[k] = '0–100';
+    });
+  }
+  return errs;
+}
+
+// ── ChartWrapper ──────────────────────────────────────────────────────────
+function ChartComp({ type, data, options, height = 220 }) {
+  const ref = useRef(null);
+  const chartRef = useRef(null);
+  useEffect(() => {
+    if (chartRef.current) chartRef.current.destroy();
+    chartRef.current = new Chart(ref.current, { type, data, options: { ...options, responsive: true, maintainAspectRatio: false, plugins: { ...options?.plugins, legend: { labels: { color: '#9999aa', font: { family: 'DM Sans' } }, ...options?.plugins?.legend }, }, scales: type !== 'pie' && type !== 'doughnut' ? { x: { ticks: { color: '#6b6b80', font:{family:'DM Sans'} }, grid: { color: '#2a2a38' }, ...options?.scales?.x }, y: { ticks: { color: '#6b6b80', font:{family:'DM Sans'} }, grid: { color: '#2a2a38' }, ...options?.scales?.y } } : {} } });
+    return () => chartRef.current?.destroy();
+  }, [JSON.stringify(data)]);
+  return <div style={{height}}><canvas ref={ref}/></div>;
+}
+
+// ── LOGIN ──────────────────────────────────────────────────────────────────
+function Login({ onLogin }) {
+  const [loginMode, setLoginMode] = useState('id');
+  const [form, setForm] = useState({ id: '', email: '', password: '' });
+  const [err, setErr] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const demos = [
+    { label: 'Admin',   id: 'admin001', email: 'admin@college.edu', pw: 'admin123',   color: 'var(--accent)'  },
+    { label: 'Faculty', id: 'FAC001',   email: 'priya@college.edu', pw: 'faculty123', color: 'var(--accent2)' },
+    { label: 'Student', id: 'STU001',   email: 'arjun@student.edu', pw: 'student123', color: 'var(--accent3)' },
+  ];
+
+  const submit = async () => {
+    setErr(''); setLoading(true);
+    if (loginMode === 'email' && !form.email.includes('@')) {
+      setErr('Please enter a valid email address'); setLoading(false); return;
+    }
+    if (loginMode === 'id' && !form.id.trim()) {
+      setErr('Please enter your User ID'); setLoading(false); return;
+    }
+    if (!form.password) { setErr('Please enter your password'); setLoading(false); return; }
+    try {
+      const body = loginMode === 'email'
+        ? { email: form.email, password: form.password }
+        : { id: form.id,    password: form.password };
+      const r = await fetch(`${API}/api/login`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+      const d = await r.json();
+      if (!r.ok) { setErr(d.error || 'Invalid credentials'); return; }
+      onLogin(d.user);
+    } catch { setErr('Cannot connect to server. Run: node server.js'); }
+    finally { setLoading(false); }
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center p-6" style={{background:'radial-gradient(ellipse at 30% 20%, rgba(124,106,247,0.12) 0%, transparent 60%), radial-gradient(ellipse at 70% 80%, rgba(247,106,140,0.08) 0%, transparent 60%), var(--ink)'}}>
+      <div style={{textAlign:'center',marginBottom:40}}>
+        <div className="mono text-xs mb-3" style={{color:'var(--accent)',letterSpacing:'0.3em'}}>◈ COLLEGE SYSTEM</div>
+        <h1 style={{fontSize:'clamp(28px,5vw,48px)',fontWeight:700,letterSpacing:'-0.02em',lineHeight:1.1}}>Internal Assessment<br/><span style={{color:'var(--accent)'}}>Management</span></h1>
+        <p style={{color:'var(--muted)',marginTop:12,fontSize:14}}>Track IA marks, analytics & reports</p>
+      </div>
+
+      <div className="card glow" style={{width:'100%',maxWidth:420,padding:32}}>
+
+        {/* Quick-fill demo buttons */}
+        <div className="flex gap-2 mb-5">
+          {demos.map(d => (
+            <button key={d.id} className="btn flex-1 text-xs"
+              style={{background:`${d.color}22`,color:d.color,border:`1px solid ${d.color}44`}}
+              onClick={() => setForm({ id: d.id, email: d.email, password: d.pw })}>
+              {d.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Toggle: ID vs Email login */}
+        <div className="flex mb-5" style={{background:'var(--surface)',borderRadius:8,padding:4,gap:3}}>
+          {[['id','🪪  Login with ID'],['email','✉️  Login with Email']].map(([mode,label]) => (
+            <button key={mode} className="btn flex-1"
+              style={{padding:'7px 6px',fontSize:12,borderRadius:6,border:'none',
+                background: loginMode===mode ? 'var(--accent)' : 'transparent',
+                color:      loginMode===mode ? '#fff'          : 'var(--muted)'}}
+              onClick={() => { setLoginMode(mode); setErr(''); }}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex flex-col gap-4">
+          {loginMode === 'id' && (
+            <Field label="User ID / Student ID / Faculty ID">
+              <input className="input mono" placeholder="e.g. admin001 · FAC001 · STU001"
+                value={form.id} autoFocus
+                onChange={e => setForm(f => ({...f, id: e.target.value}))}
+                onKeyDown={e => e.key === 'Enter' && submit()} />
+            </Field>
+          )}
+          {loginMode === 'email' && (
+            <Field label="Email Address">
+              <input className="input" type="email" placeholder="e.g. arjun@student.edu"
+                value={form.email} autoFocus
+                onChange={e => setForm(f => ({...f, email: e.target.value}))}
+                onKeyDown={e => e.key === 'Enter' && submit()} />
+            </Field>
+          )}
+          <Field label="Password">
+            <input className="input" type="password" placeholder="••••••••"
+              value={form.password}
+              onChange={e => setForm(f => ({...f, password: e.target.value}))}
+              onKeyDown={e => e.key === 'Enter' && submit()} />
+          </Field>
+          {err && (
+            <p style={{color:'var(--fail)',fontSize:13,background:'rgba(248,113,113,0.1)',padding:'10px 14px',borderRadius:8}}>
+              ⚠ {err}
+            </p>
+          )}
+          <button className="btn btn-primary w-full" style={{marginTop:4,padding:'12px',fontSize:15}} onClick={submit} disabled={loading}>
+            {loading ? 'Signing in…' : 'Sign In →'}
+          </button>
+        </div>
+
+        {/* Credentials hint box */}
+        <div style={{marginTop:20,padding:'12px 14px',background:'var(--surface)',borderRadius:8,border:'1px solid var(--border)'}}>
+          <div className="mono text-xs mb-2" style={{color:'var(--muted)'}}>DEMO CREDENTIALS</div>
+          <div style={{fontSize:12,color:'var(--muted)',display:'flex',flexDirection:'column',gap:5}}>
+            <div><span style={{color:'var(--accent)',fontFamily:'monospace'}}>admin001</span> · admin@college.edu · <span style={{color:'var(--accent)'}}>admin123</span></div>
+            <div><span style={{color:'var(--accent2)',fontFamily:'monospace'}}>FAC001</span> · priya@college.edu · <span style={{color:'var(--accent2)'}}>faculty123</span></div>
+            <div><span style={{color:'var(--accent3)',fontFamily:'monospace'}}>STU001</span> · arjun@student.edu · <span style={{color:'var(--accent3)'}}>student123</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── SIDEBAR ────────────────────────────────────────────────────────────────
+function Sidebar({ user, page, setPage, onLogout }) {
+  const adminLinks = [
+    { id: 'dashboard', icon: '⬡', label: 'Dashboard' },
+    { id: 'students', icon: '◈', label: 'Students' },
+    { id: 'faculty', icon: '◉', label: 'Faculty' },
+    { id: 'subjects', icon: '◇', label: 'Subjects' },
+    { id: 'marks', icon: '◆', label: 'All Marks' },
+    { id: 'analytics', icon: '◈', label: 'Analytics' },
+    { id: 'reports', icon: '⊞', label: 'Reports' },
+  ];
+  const facultyLinks = [
+    { id: 'dashboard', icon: '⬡', label: 'Dashboard' },
+    { id: 'marks-entry', icon: '◆', label: 'Enter Marks' },
+    { id: 'analytics', icon: '◈', label: 'Analytics' },
+  ];
+  const studentLinks = [
+    { id: 'dashboard', icon: '⬡', label: 'My Marks' },
+    { id: 'analytics', icon: '◈', label: 'Performance' },
+  ];
+  const links = user.role === 'admin' ? adminLinks : user.role === 'faculty' ? facultyLinks : studentLinks;
+  const roleColor = user.role === 'admin' ? 'var(--accent)' : user.role === 'faculty' ? 'var(--accent2)' : 'var(--accent3)';
+
+  return (
+    <div className="flex flex-col h-full" style={{padding:'20px 14px'}}>
+      <div style={{padding:'0 4px',marginBottom:28}}>
+        <div className="mono text-xs mb-1" style={{color:'var(--muted)'}}>◈ IA SYSTEM</div>
+        <div style={{fontSize:16,fontWeight:700,letterSpacing:'-0.01em'}}>Management</div>
+      </div>
+      <nav className="flex flex-col gap-1 flex-1">
+        {links.map(l => (
+          <div key={l.id} className={`sidebar-link${page===l.id?' active':''}`} onClick={() => setPage(l.id)}>
+            <span className="mono" style={{fontSize:14}}>{l.icon}</span>
+            <span>{l.label}</span>
+          </div>
+        ))}
+      </nav>
+      <div style={{borderTop:'1px solid var(--border)',paddingTop:16,marginTop:16}}>
+        <div style={{fontSize:13,fontWeight:600,marginBottom:2}}>{user.name}</div>
+        <div className="mono text-xs mb-3" style={{color:roleColor}}>{user.role.toUpperCase()} · {user.id}</div>
+        <button className="btn btn-ghost w-full" style={{fontSize:13}} onClick={onLogout}>Sign Out</button>
+      </div>
+    </div>
+  );
+}
+
+// ── ADMIN DASHBOARD ────────────────────────────────────────────────────────
+function AdminDashboard({ toast }) {
+  const [data, setData] = useState(null);
+  useEffect(() => { fetch('/api/analytics').then(r=>r.json()).then(setData); }, []);
+  if (!data) return <div className="p-8" style={{color:'var(--muted)'}}>Loading…</div>;
+
+  const statCards = [
+    { label: 'Total Students', value: data.totalStudents, color: 'var(--accent)', icon: '◈' },
+    { label: 'Subjects', value: data.totalSubjects, color: 'var(--accent2)', icon: '◇' },
+    { label: 'Faculty', value: data.totalFaculty, color: 'var(--accent3)', icon: '◉' },
+    { label: 'Marks Entered', value: data.totalMarksEntered, color: 'var(--accent4)', icon: '◆' },
+  ];
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <h1 className="text-2xl font-bold" style={{letterSpacing:'-0.02em'}}>Admin Dashboard</h1>
+        <p style={{color:'var(--muted)',fontSize:14,marginTop:4}}>Overview of the entire institution</p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4" style={{gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))'}}>
+        {statCards.map(s => (
+          <div key={s.label} className="card stat-card" style={{borderLeft:`3px solid ${s.color}`}}>
+            <div className="mono text-xs mb-1" style={{color:'var(--muted)'}}>{s.icon} {s.label}</div>
+            <div style={{fontSize:36,fontWeight:700,color:s.color,fontFamily:'Space Mono'}}>{s.value}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid gap-4" style={{gridTemplateColumns:'repeat(auto-fit,minmax(300px,1fr))'}}>
+        <div className="card" style={{padding:20}}>
+          <h3 className="mono text-xs mb-4" style={{color:'var(--muted)'}}>◆ SUBJECT PERFORMANCE</h3>
+          <ChartComp type="bar" data={{
+            labels: data.subjectStats.map(s => s.code),
+            datasets: [{ label: 'Avg Score', data: data.subjectStats.map(s => s.avgScore), backgroundColor: 'rgba(124,106,247,0.7)', borderRadius: 4 }]
+          }} options={{ plugins: { legend: { display: false } }, scales: { y: { min: 0, max: 100 } } }} />
+        </div>
+        <div className="card" style={{padding:20}}>
+          <h3 className="mono text-xs mb-4" style={{color:'var(--muted)'}}>◈ PASS / FAIL OVERVIEW</h3>
+          <ChartComp type="doughnut" data={{
+            labels: ['Pass', 'Fail'],
+            datasets: [{ data: [data.subjectStats.reduce((a,s)=>a+s.pass,0), data.subjectStats.reduce((a,s)=>a+s.fail,0)], backgroundColor: ['rgba(74,222,128,0.8)','rgba(248,113,113,0.8)'], borderWidth: 0 }]
+          }} options={{}} height={220} />
+        </div>
+      </div>
+
+      <div className="grid gap-4" style={{gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))'}}>
+        <div className="card" style={{padding:20}}>
+          <h3 className="mono text-xs mb-4" style={{color:'var(--muted)'}}>🏆 TOP STUDENTS</h3>
+          {data.topStudents.map((s,i) => (
+            <div key={s.id} className="flex items-center justify-between py-2" style={{borderBottom:'1px solid var(--border)'}}>
+              <div className="flex items-center gap-3">
+                <div className="mono text-xs w-5" style={{color:'var(--muted)'}}>{i+1}</div>
+                <div>
+                  <div style={{fontWeight:500,fontSize:14}}>{s.name}</div>
+                  <div className="mono text-xs" style={{color:'var(--muted)'}}>{s.id}</div>
+                </div>
+              </div>
+              <div style={{fontSize:18,fontWeight:700,color:'var(--accent3)',fontFamily:'Space Mono'}}>{s.overall}</div>
+            </div>
+          ))}
+        </div>
+        <div className="card" style={{padding:20}}>
+          <h3 className="mono text-xs mb-4" style={{color:'var(--fail)'}}>⚠ AT RISK STUDENTS</h3>
+          {data.atRisk.length === 0 ? <p style={{color:'var(--muted)',fontSize:14}}>No students at risk!</p> :
+            data.atRisk.map(s => (
+              <div key={s.id} className="flex items-center justify-between py-2" style={{borderBottom:'1px solid var(--border)'}}>
+                <div>
+                  <div style={{fontWeight:500,fontSize:14}}>{s.name}</div>
+                  <div className="mono text-xs" style={{color:'var(--muted)'}}>{s.id} · Sem {s.semester}</div>
+                </div>
+                <span className="badge badge-fail">At Risk</span>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── STUDENTS PAGE ──────────────────────────────────────────────────────────
+function StudentsPage({ toast }) {
+  const [students, setStudents] = useState([]);
+  const [search, setSearch] = useState('');
+  const [filterSem, setFilterSem] = useState('');
+  const [modal, setModal] = useState(null);
+  const [form, setForm] = useState({ name:'',id:'',email:'',phone:'',department:'',semester:'' });
+  const [errs, setErrs] = useState({});
+
+  const load = () => fetch('/api/students').then(r=>r.json()).then(setStudents);
+  useEffect(() => { load(); }, []);
+
+  const filtered = students.filter(s =>
+    (s.name.toLowerCase().includes(search.toLowerCase()) || s.id.toLowerCase().includes(search.toLowerCase())) &&
+    (!filterSem || s.semester === +filterSem)
+  );
+
+  const openAdd = () => { setForm({name:'',id:'',email:'',phone:'',department:'',semester:''}); setErrs({}); setModal('add'); };
+  const openEdit = s => { setForm({...s}); setErrs({}); setModal('edit'); };
+
+  const save = async () => {
+    const e = validate(form, { name:true, phone:true, email:true, id:true });
+    if (Object.keys(e).length) { setErrs(e); return; }
+    const url = modal === 'edit' ? `/api/students/${form.id}` : '/api/students';
+    const method = modal === 'edit' ? 'PUT' : 'POST';
+    const r = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(form) });
+    const d = await r.json();
+    if (!r.ok) { toast(d.error,'error'); return; }
+    toast(modal==='edit' ? 'Student updated' : 'Student added','success');
+    setModal(null); load();
+  };
+
+  const del = async id => {
+    if (!confirm('Delete this student?')) return;
+    await fetch(`/api/students/${id}`,{method:'DELETE'});
+    toast('Student deleted','success'); load();
+  };
+
+  const exportCSV = () => {
+    const rows = [['Name','ID','Email','Phone','Department','Semester'], ...filtered.map(s=>[s.name,s.id,s.email,s.phone,s.department,s.semester])];
+    const csv = rows.map(r=>r.join(',')).join('\n');
+    const a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+    a.download = 'students.csv'; a.click();
+  };
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold" style={{letterSpacing:'-0.02em'}}>Students</h1>
+          <p style={{color:'var(--muted)',fontSize:14,marginTop:2}}>{students.length} registered</p>
+        </div>
+        <div className="flex gap-2">
+          <button className="btn btn-ghost" onClick={exportCSV}>↓ CSV</button>
+          <button className="btn btn-primary" onClick={openAdd}>+ Add Student</button>
+        </div>
+      </div>
+
+      <div className="flex gap-3 flex-wrap">
+        <input className="input" placeholder="Search name or ID…" value={search} onChange={e=>setSearch(e.target.value)} style={{maxWidth:260}}/>
+        <select className="input" value={filterSem} onChange={e=>setFilterSem(e.target.value)} style={{maxWidth:160}}>
+          <option value="">All Semesters</option>
+          {[1,2,3,4,5,6].map(n=><option key={n} value={n}>Semester {n}</option>)}
+        </select>
+      </div>
+
+      <div className="card table-wrap">
+        <table>
+          <thead><tr><th>Name</th><th>Student ID</th><th>Email</th><th>Department</th><th>Semester</th><th>Actions</th></tr></thead>
+          <tbody>
+            {filtered.length === 0 && <tr><td colSpan={6} style={{color:'var(--muted)',textAlign:'center',padding:32}}>No students found</td></tr>}
+            {filtered.map(s => (
+              <tr key={s.id}>
+                <td style={{fontWeight:500}}>{s.name}</td>
+                <td><span className="mono" style={{fontSize:13,color:'var(--accent)'}}>{s.id}</span></td>
+                <td style={{color:'var(--muted)',fontSize:13}}>{s.email}</td>
+                <td>{s.department}</td>
+                <td><span className="badge" style={{background:'rgba(124,106,247,0.15)',color:'var(--accent)'}}>Sem {s.semester}</span></td>
+                <td>
+                  <div className="flex gap-2">
+                    <button className="btn btn-ghost" style={{padding:'5px 10px',fontSize:12}} onClick={()=>openEdit(s)}>Edit</button>
+                    <button className="btn btn-danger" style={{padding:'5px 10px',fontSize:12}} onClick={()=>del(s.id)}>Delete</button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {modal && (
+        <Modal title={modal==='edit'?'Edit Student':'Add Student'} onClose={()=>setModal(null)}>
+          <div className="flex flex-col gap-4">
+            {[{k:'name',l:'Full Name'},{k:'id',l:'Student ID'},{k:'email',l:'Email'},{k:'phone',l:'Phone Number'},{k:'department',l:'Department'}].map(({k,l})=>(
+              <Field key={k} label={l} error={errs[k]}>
+                <input className="input" value={form[k]} onChange={e=>setForm(f=>({...f,[k]:e.target.value}))} disabled={modal==='edit'&&k==='id'} />
+              </Field>
+            ))}
+            <Field label="Semester" error={errs.semester}>
+              <select className="input" value={form.semester} onChange={e=>setForm(f=>({...f,semester:e.target.value}))}>
+                <option value="">Select</option>
+                {[1,2,3,4,5,6].map(n=><option key={n} value={n}>Semester {n}</option>)}
+              </select>
+            </Field>
+            <div className="flex gap-3 justify-end mt-2">
+              <button className="btn btn-ghost" onClick={()=>setModal(null)}>Cancel</button>
+              <button className="btn btn-primary" onClick={save}>Save</button>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+// ── FACULTY PAGE ───────────────────────────────────────────────────────────
+function FacultyPage({ toast }) {
+  const [faculty, setFaculty] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+  const [modal, setModal] = useState(false);
+  const [form, setForm] = useState({name:'',id:'',email:'',phone:'',department:''});
+  const [errs, setErrs] = useState({});
+
+  const load = () => Promise.all([fetch('/api/faculty').then(r=>r.json()), fetch('/api/subjects').then(r=>r.json())]).then(([f,s])=>{ setFaculty(f); setSubjects(s); });
+  useEffect(()=>{ load(); },[]);
+
+  const save = async () => {
+    const e = validate(form,{name:true,phone:true,email:true,id:true});
+    if(Object.keys(e).length){setErrs(e);return;}
+    const r = await fetch('/api/faculty',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(form)});
+    const d = await r.json();
+    if(!r.ok){toast(d.error,'error');return;}
+    toast('Faculty added','success'); setModal(false); load();
+  };
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold" style={{letterSpacing:'-0.02em'}}>Faculty</h1>
+          <p style={{color:'var(--muted)',fontSize:14,marginTop:2}}>{faculty.length} members</p>
+        </div>
+        <button className="btn btn-primary" onClick={()=>{setForm({name:'',id:'',email:'',phone:'',department:''});setErrs({});setModal(true);}}>+ Add Faculty</button>
+      </div>
+
+      <div className="card table-wrap">
+        <table>
+          <thead><tr><th>Name</th><th>Faculty ID</th><th>Email</th><th>Department</th><th>Subjects Assigned</th></tr></thead>
+          <tbody>
+            {faculty.map(f => {
+              const assigned = subjects.filter(s => s.facultyId === f.id);
+              return (
+                <tr key={f.id}>
+                  <td style={{fontWeight:500}}>{f.name}</td>
+                  <td><span className="mono" style={{fontSize:13,color:'var(--accent2)'}}>{f.id}</span></td>
+                  <td style={{color:'var(--muted)',fontSize:13}}>{f.email}</td>
+                  <td>{f.department}</td>
+                  <td>
+                    <div className="flex gap-1 flex-wrap">
+                      {assigned.length ? assigned.map(s=><span key={s.code} className="badge" style={{background:'rgba(247,106,140,0.15)',color:'var(--accent2)',fontSize:11}}>{s.code}</span>) : <span style={{color:'var(--muted)',fontSize:13}}>None</span>}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {modal && (
+        <Modal title="Add Faculty" onClose={()=>setModal(false)}>
+          <div className="flex flex-col gap-4">
+            {[{k:'name',l:'Full Name'},{k:'id',l:'Faculty ID'},{k:'email',l:'Email'},{k:'phone',l:'Phone'},{k:'department',l:'Department'}].map(({k,l})=>(
+              <Field key={k} label={l} error={errs[k]}>
+                <input className="input" value={form[k]} onChange={e=>setForm(f=>({...f,[k]:e.target.value}))}/>
+              </Field>
+            ))}
+            <div className="flex gap-3 justify-end mt-2">
+              <button className="btn btn-ghost" onClick={()=>setModal(false)}>Cancel</button>
+              <button className="btn btn-primary" onClick={save}>Save</button>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+// ── SUBJECTS PAGE ──────────────────────────────────────────────────────────
+function SubjectsPage({ toast }) {
+  const [subjects, setSubjects] = useState([]);
+  const [faculty, setFaculty] = useState([]);
+  const [modal, setModal] = useState(null);
+  const [form, setForm] = useState({code:'',name:'',semester:'',department:'',facultyId:''});
+  const [errs, setErrs] = useState({});
+
+  const load = () => Promise.all([fetch('/api/subjects').then(r=>r.json()),fetch('/api/faculty').then(r=>r.json())]).then(([s,f])=>{setSubjects(s);setFaculty(f);});
+  useEffect(()=>{load();},[]);
+
+  const save = async () => {
+    const e = {};
+    if(!form.code)e.code='Required';
+    if(!form.name)e.name='Required';
+    if(!form.semester)e.semester='Required';
+    if(Object.keys(e).length){setErrs(e);return;}
+    const url = modal==='edit'?`/api/subjects/${form.code}`:'/api/subjects';
+    const method = modal==='edit'?'PUT':'POST';
+    const r = await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(form)});
+    const d = await r.json();
+    if(!r.ok){toast(d.error,'error');return;}
+    toast(modal==='edit'?'Subject updated':'Subject added','success');
+    setModal(null); load();
+  };
+
+  const del = async code => {
+    if(!confirm('Delete this subject?'))return;
+    await fetch(`/api/subjects/${code}`,{method:'DELETE'});
+    toast('Subject deleted','success'); load();
+  };
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold" style={{letterSpacing:'-0.02em'}}>Subjects</h1>
+          <p style={{color:'var(--muted)',fontSize:14,marginTop:2}}>{subjects.length} subjects</p>
+        </div>
+        <button className="btn btn-primary" onClick={()=>{setForm({code:'',name:'',semester:'',department:'CSE',facultyId:''});setErrs({});setModal('add');}}>+ Add Subject</button>
+      </div>
+
+      <div className="card table-wrap">
+        <table>
+          <thead><tr><th>Code</th><th>Subject Name</th><th>Semester</th><th>Faculty</th><th>Actions</th></tr></thead>
+          <tbody>
+            {subjects.map(s => (
+              <tr key={s.code}>
+                <td><span className="mono" style={{color:'var(--accent4)',fontSize:13}}>{s.code}</span></td>
+                <td style={{fontWeight:500}}>{s.name}</td>
+                <td><span className="badge" style={{background:'rgba(124,106,247,0.15)',color:'var(--accent)'}}>Sem {s.semester}</span></td>
+                <td style={{fontSize:13,color:'var(--muted)'}}>{s.facultyName}</td>
+                <td>
+                  <div className="flex gap-2">
+                    <button className="btn btn-ghost" style={{padding:'5px 10px',fontSize:12}} onClick={()=>{setForm({...s});setErrs({});setModal('edit');}}>Edit</button>
+                    <button className="btn btn-danger" style={{padding:'5px 10px',fontSize:12}} onClick={()=>del(s.code)}>Delete</button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {modal && (
+        <Modal title={modal==='edit'?'Edit Subject':'Add Subject'} onClose={()=>setModal(null)}>
+          <div className="flex flex-col gap-4">
+            <Field label="Subject Code" error={errs.code}><input className="input mono" value={form.code} onChange={e=>setForm(f=>({...f,code:e.target.value}))} disabled={modal==='edit'}/></Field>
+            <Field label="Subject Name" error={errs.name}><input className="input" value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))}/></Field>
+            <Field label="Semester" error={errs.semester}>
+              <select className="input" value={form.semester} onChange={e=>setForm(f=>({...f,semester:e.target.value}))}>
+                <option value="">Select</option>
+                {[1,2,3,4,5,6].map(n=><option key={n} value={n}>Semester {n}</option>)}
+              </select>
+            </Field>
+            <Field label="Department"><input className="input" value={form.department} onChange={e=>setForm(f=>({...f,department:e.target.value}))}/></Field>
+            <Field label="Assign Faculty">
+              <select className="input" value={form.facultyId} onChange={e=>setForm(f=>({...f,facultyId:e.target.value}))}>
+                <option value="">-- Unassigned --</option>
+                {faculty.map(f=><option key={f.id} value={f.id}>{f.name} ({f.id})</option>)}
+              </select>
+            </Field>
+            <div className="flex gap-3 justify-end mt-2">
+              <button className="btn btn-ghost" onClick={()=>setModal(null)}>Cancel</button>
+              <button className="btn btn-primary" onClick={save}>Save</button>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+// ── MARKS ENTRY (Faculty) ──────────────────────────────────────────────────
+function MarksEntry({ user, toast }) {
+  const [subjects, setSubjects] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [selectedSub, setSelectedSub] = useState('');
+  const [marksData, setMarksData] = useState([]);
+  const [forms, setForms] = useState({});
+  const [errs, setErrs] = useState({});
+  const [saving, setSaving] = useState({});
+
+  useEffect(() => {
+    fetch('/api/subjects').then(r=>r.json()).then(s => {
+      const mine = user.role === 'faculty' ? s.filter(sub => sub.facultyId === user.id) : s;
+      setSubjects(mine);
+      if(mine.length) setSelectedSub(mine[0].code);
+    });
+    fetch('/api/students').then(r=>r.json()).then(setStudents);
+  }, []);
+
+  useEffect(() => {
+    if(!selectedSub) return;
+    fetch(`/api/marks?subjectCode=${selectedSub}`).then(r=>r.json()).then(m => {
+      setMarksData(m);
+      const f = {};
+      m.forEach(x => { f[x.studentId] = { ia1:x.ia1, ia2:x.ia2, ia3:x.ia3 }; });
+      setForms(f); setErrs({});
+    });
+  }, [selectedSub]);
+
+  const studentsForSubject = students;
+  const getForm = id => forms[id] || { ia1:'', ia2:'', ia3:'' };
+  const setForm = (id, field, val) => setForms(f => ({ ...f, [id]: { ...getForm(id), [field]: val } }));
+
+  const saveMarks = async (studentId) => {
+    const f = getForm(studentId);
+    const e = validate(f, { marks: true });
+    if(Object.keys(e).length){ setErrs(prev=>({...prev,[studentId]:e})); return; }
+    setSaving(s=>({...s,[studentId]:true}));
+    const r = await fetch('/api/marks', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ studentId, subjectCode: selectedSub, ...f, enteredBy: user.id }) });
+    const d = await r.json();
+    setSaving(s=>({...s,[studentId]:false}));
+    if(!r.ok){ toast(d.error,'error'); return; }
+    toast(`Marks saved for ${students.find(s=>s.id===studentId)?.name}`,'success');
+    setMarksData(prev => {
+      const idx = prev.findIndex(m=>m.studentId===studentId);
+      if(idx>=0) { const n=[...prev]; n[idx]=d.marks; return n; }
+      return [...prev, d.marks];
+    });
+  };
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div>
+        <h1 className="text-2xl font-bold" style={{letterSpacing:'-0.02em'}}>Enter IA Marks</h1>
+        <p style={{color:'var(--muted)',fontSize:14,marginTop:2}}>Select subject to enter or update marks</p>
+      </div>
+
+      <div className="flex gap-3 flex-wrap">
+        {subjects.map(s => (
+          <button key={s.code} className={`btn ${selectedSub===s.code?'btn-primary':'btn-ghost'}`} onClick={()=>setSelectedSub(s.code)}>
+            {s.code} – {s.name}
+          </button>
+        ))}
+      </div>
+
+      {selectedSub && (
+        <div className="card table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Student</th><th>ID</th>
+                <th>IA1 <span style={{color:'var(--muted)',fontWeight:400}}>(0–100)</span></th>
+                <th>IA2 <span style={{color:'var(--muted)',fontWeight:400}}>(0–100)</span></th>
+                <th>IA3 <span style={{color:'var(--muted)',fontWeight:400}}>(0–100)</span></th>
+                <th>Average</th><th>Result</th><th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {studentsForSubject.map(s => {
+                const f = getForm(s.id);
+                const existing = marksData.find(m=>m.studentId===s.id);
+                const avgPreview = f.ia1!==''&&f.ia2!==''&&f.ia3!=='' ? ((+f.ia1+ +f.ia2+ +f.ia3)/3).toFixed(1) : '—';
+                const sErrs = errs[s.id] || {};
+                return (
+                  <tr key={s.id}>
+                    <td style={{fontWeight:500,minWidth:130}}>{s.name}</td>
+                    <td><span className="mono" style={{fontSize:12,color:'var(--muted)'}}>{s.id}</span></td>
+                    {['ia1','ia2','ia3'].map(k => (
+                      <td key={k} style={{minWidth:90}}>
+                        <input className="input" type="number" min="0" max="100" value={f[k]} onChange={e=>setForm(s.id,k,e.target.value)} style={{width:80,textAlign:'center',borderColor:sErrs[k]?'var(--fail)':''}} />
+                      </td>
+                    ))}
+                    <td><span className="mono" style={{fontWeight:700,color:'var(--accent)'}}>{avgPreview}</span></td>
+                    <td>{avgPreview!=='—' ? <span className={`badge ${+avgPreview>=40?'badge-pass':'badge-fail'}`}>{+avgPreview>=40?'Pass':'Fail'}</span> : '—'}</td>
+                    <td>
+                      <button className="btn btn-primary" style={{padding:'6px 12px',fontSize:12}} onClick={()=>saveMarks(s.id)} disabled={saving[s.id]}>
+                        {saving[s.id]?'…': existing?'Update':'Save'}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── ALL MARKS (Admin view) ─────────────────────────────────────────────────
+function AllMarks({ toast }) {
+  const [marks, setMarks] = useState([]);
+  const [filter, setFilter] = useState('');
+  useEffect(()=>{ fetch('/api/marks').then(r=>r.json()).then(setMarks); },[]);
+  const filtered = marks.filter(m => !filter || m.subjectCode === filter);
+  const codes = [...new Set(marks.map(m=>m.subjectCode))];
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">All Marks</h1>
+          <p style={{color:'var(--muted)',fontSize:14,marginTop:2}}>{marks.length} records</p>
+        </div>
+        <select className="input" style={{maxWidth:200}} value={filter} onChange={e=>setFilter(e.target.value)}>
+          <option value="">All Subjects</option>
+          {codes.map(c=><option key={c} value={c}>{c}</option>)}
+        </select>
+      </div>
+      <div className="card table-wrap">
+        <table>
+          <thead><tr><th>Student</th><th>Subject</th><th>IA1</th><th>IA2</th><th>IA3</th><th>Average</th><th>Result</th></tr></thead>
+          <tbody>
+            {filtered.map((m,i)=>(
+              <tr key={i} style={m.result==='Fail'?{background:'rgba(248,113,113,0.05)'}:{}}>
+                <td><div style={{fontWeight:500,fontSize:14}}>{m.studentName}</div><div className="mono" style={{fontSize:11,color:'var(--muted)'}}>{m.studentId}</div></td>
+                <td><div style={{fontSize:13}}>{m.subjectName}</div><div className="mono" style={{fontSize:11,color:'var(--muted)'}}>{m.subjectCode}</div></td>
+                <td className="mono">{m.ia1}</td><td className="mono">{m.ia2}</td><td className="mono">{m.ia3}</td>
+                <td><span className="mono" style={{fontWeight:700,color:'var(--accent)',fontSize:16}}>{m.average}</span></td>
+                <td><span className={`badge ${m.result==='Pass'?'badge-pass':'badge-fail'}`}>{m.result}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ── STUDENT DASHBOARD ──────────────────────────────────────────────────────
+function StudentDashboard({ user, toast }) {
+  const [marks, setMarks] = useState([]);
+  useEffect(()=>{ fetch(`/api/marks/${user.id}`).then(r=>r.json()).then(setMarks); },[]);
+  const overall = marks.length ? (marks.reduce((a,m)=>a+m.average,0)/marks.length).toFixed(1) : 'N/A';
+  const passCount = marks.filter(m=>m.average>=40).length;
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="card" style={{padding:24,background:'linear-gradient(135deg, rgba(124,106,247,0.15) 0%, rgba(247,106,140,0.08) 100%)'}}>
+        <div className="flex items-start justify-between flex-wrap gap-4">
+          <div>
+            <div className="mono text-xs mb-2" style={{color:'var(--muted)'}}>◈ STUDENT PROFILE</div>
+            <h1 style={{fontSize:28,fontWeight:700,letterSpacing:'-0.02em'}}>{user.name}</h1>
+            <div className="flex gap-4 mt-2 flex-wrap">
+              <span className="mono text-xs" style={{color:'var(--accent)'}}>{user.id}</span>
+              <span style={{fontSize:13,color:'var(--muted)'}}>· {user.department}</span>
+              <span style={{fontSize:13,color:'var(--muted)'}}>· Semester {user.semester}</span>
+            </div>
+          </div>
+          <div style={{textAlign:'right'}}>
+            <div className="mono text-xs mb-1" style={{color:'var(--muted)'}}>OVERALL AVG</div>
+            <div style={{fontSize:48,fontWeight:700,color:'var(--accent)',fontFamily:'Space Mono',lineHeight:1}}>{overall}</div>
+            <div style={{fontSize:12,color:'var(--muted)',marginTop:4}}>{passCount}/{marks.length} subjects passed</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="card table-wrap">
+        <div style={{padding:'16px 20px',borderBottom:'1px solid var(--border)'}}>
+          <h3 className="mono text-xs" style={{color:'var(--muted)'}}>◆ SUBJECT-WISE IA MARKS</h3>
+        </div>
+        <table>
+          <thead><tr><th>Subject</th><th>IA1</th><th>IA2</th><th>IA3</th><th>Average</th><th>Result</th></tr></thead>
+          <tbody>
+            {marks.length===0 && <tr><td colSpan={6} style={{color:'var(--muted)',textAlign:'center',padding:32}}>No marks entered yet</td></tr>}
+            {marks.map((m,i)=>(
+              <tr key={i} style={m.result==='Fail'?{background:'rgba(248,113,113,0.05)'}:{}}>
+                <td><div style={{fontWeight:500}}>{m.subjectName}</div><div className="mono" style={{fontSize:11,color:'var(--muted)'}}>{m.subjectCode}</div></td>
+                {[m.ia1,m.ia2,m.ia3].map((v,j)=><td key={j} className="mono" style={{color: v<40?'var(--fail)':'var(--text)'}}>{v}</td>)}
+                <td><span className="mono" style={{fontWeight:700,fontSize:18,color: m.average>=40?'var(--accent3)':'var(--fail)'}}>{m.average}</span></td>
+                <td><span className={`badge ${m.result==='Pass'?'badge-pass':'badge-fail'}`}>{m.result}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {marks.length > 0 && (
+        <div className="card" style={{padding:20}}>
+          <h3 className="mono text-xs mb-4" style={{color:'var(--muted)'}}>◈ IA PROGRESS BY SUBJECT</h3>
+          <ChartComp type="line" data={{
+            labels: ['IA1','IA2','IA3'],
+            datasets: marks.map((m,i)=>({
+              label: m.subjectCode,
+              data: [m.ia1,m.ia2,m.ia3],
+              borderColor: ['#7c6af7','#f76a8c','#6af7c4','#f7c46a'][i%4],
+              backgroundColor: 'transparent', tension: 0.4, pointRadius: 5
+            }))
+          }} options={{scales:{y:{min:0,max:100}}}} height={240}/>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── ANALYTICS PAGE ─────────────────────────────────────────────────────────
+function AnalyticsPage({ user }) {
+  const [data, setData] = useState(null);
+  const [marks, setMarks] = useState([]);
+  useEffect(()=>{
+    fetch('/api/analytics').then(r=>r.json()).then(setData);
+    const url = user.role==='student' ? `/api/marks/${user.id}` : '/api/marks';
+    fetch(url).then(r=>r.json()).then(setMarks);
+  },[]);
+  if(!data) return <div className="p-8" style={{color:'var(--muted)'}}>Loading…</div>;
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <h1 className="text-2xl font-bold">Analytics</h1>
+        <p style={{color:'var(--muted)',fontSize:14,marginTop:2}}>Performance charts and insights</p>
+      </div>
+
+      <div className="grid gap-4" style={{gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))'}}>
+        <div className="card" style={{padding:20}}>
+          <h3 className="mono text-xs mb-4" style={{color:'var(--muted)'}}>BAR — SUBJECT AVG SCORES</h3>
+          <ChartComp type="bar" data={{
+            labels: data.subjectStats.map(s=>s.code),
+            datasets: [{
+              label: 'Average Score',
+              data: data.subjectStats.map(s=>s.avgScore),
+              backgroundColor: data.subjectStats.map(s=>s.avgScore>=40?'rgba(106,247,196,0.7)':'rgba(248,113,113,0.7)'),
+              borderRadius: 6
+            }]
+          }} options={{plugins:{legend:{display:false}},scales:{y:{min:0,max:100}}}} />
+        </div>
+
+        <div className="card" style={{padding:20}}>
+          <h3 className="mono text-xs mb-4" style={{color:'var(--muted)'}}>PIE — PASS/FAIL %</h3>
+          <ChartComp type="pie" data={{
+            labels: ['Pass','Fail'],
+            datasets: [{
+              data: [data.subjectStats.reduce((a,s)=>a+s.pass,0), data.subjectStats.reduce((a,s)=>a+s.fail,0)],
+              backgroundColor: ['rgba(74,222,128,0.85)','rgba(248,113,113,0.85)'],
+              borderWidth: 2, borderColor: 'var(--card)'
+            }]
+          }} options={{}} />
+        </div>
+
+        <div className="card" style={{padding:20}}>
+          <h3 className="mono text-xs mb-4" style={{color:'var(--muted)'}}>LINE — IA PROGRESSION</h3>
+          <ChartComp type="line" data={{
+            labels: ['IA1','IA2','IA3'],
+            datasets: data.subjectStats.map((s,i)=>{
+              const subMarks = marks.filter(m=>m.subjectCode===s.code);
+              const ia1Avg = subMarks.length ? subMarks.reduce((a,m)=>a+(+m.ia1||0),0)/subMarks.length : 0;
+              const ia2Avg = subMarks.length ? subMarks.reduce((a,m)=>a+(+m.ia2||0),0)/subMarks.length : 0;
+              const ia3Avg = subMarks.length ? subMarks.reduce((a,m)=>a+(+m.ia3||0),0)/subMarks.length : 0;
+              return { label: s.code, data: [+ia1Avg.toFixed(1),+ia2Avg.toFixed(1),+ia3Avg.toFixed(1)], borderColor: ['#7c6af7','#f76a8c','#6af7c4','#f7c46a'][i%4], backgroundColor:'transparent', tension:0.4, pointRadius:4 };
+            })
+          }} options={{scales:{y:{min:0,max:100}}}} />
+        </div>
+      </div>
+
+      <div className="grid gap-4" style={{gridTemplateColumns:'repeat(auto-fit,minmax(300px,1fr))'}}>
+        <div className="card" style={{padding:20}}>
+          <h3 className="mono text-xs mb-4" style={{color:'var(--muted)'}}>SUBJECT STATS TABLE</h3>
+          <table><thead><tr><th>Code</th><th>Avg</th><th>Pass</th><th>Fail</th></tr></thead>
+          <tbody>
+            {data.subjectStats.map(s=>(
+              <tr key={s.code}>
+                <td><span className="mono" style={{color:'var(--accent4)'}}>{s.code}</span></td>
+                <td><span className="mono" style={{fontWeight:700,color:s.avgScore>=40?'var(--pass)':'var(--fail)'}}>{s.avgScore}</span></td>
+                <td><span style={{color:'var(--pass)'}}>{s.pass}</span></td>
+                <td><span style={{color:'var(--fail)'}}>{s.fail}</span></td>
+              </tr>
+            ))}
+          </tbody></table>
+        </div>
+
+        <div className="card" style={{padding:20}}>
+          <h3 className="mono text-xs mb-4" style={{color:'var(--muted)'}}>TOP PERFORMERS</h3>
+          {data.topStudents.map((s,i)=>(
+            <div key={s.id} className="flex items-center justify-between py-2" style={{borderBottom:'1px solid var(--border)'}}>
+              <div className="flex items-center gap-3">
+                <div className="mono text-xs w-5" style={{color:['#f7c46a','var(--muted)','var(--muted)'][i]||'var(--muted)'}}>{i+1}</div>
+                <div style={{fontWeight:500,fontSize:14}}>{s.name}</div>
+              </div>
+              <span className="mono" style={{color:'var(--accent3)',fontWeight:700}}>{s.overall}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── REPORTS PAGE ───────────────────────────────────────────────────────────
+function ReportsPage({ toast }) {
+  const [reports, setReports] = useState([]);
+  const [semester, setSemester] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const generate = async () => {
+    setLoading(true);
+    const r = await fetch(`/api/reports?type=student${semester?`&semester=${semester}`:''}`);
+    const d = await r.json();
+    setReports(d); setLoading(false);
+  };
+
+  useEffect(()=>{ generate(); },[]);
+
+  const exportCSV = () => {
+    const rows = [['Student ID','Student Name','Department','Semester','Subject Code','Subject Name','IA1','IA2','IA3','Average','Result']];
+    reports.forEach(r => r.marks.forEach(m => rows.push([r.studentId,r.studentName,r.department,r.semester,m.subjectCode,m.subjectName,m.ia1,m.ia2,m.ia3,m.average,m.result])));
+    const csv = rows.map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
+    const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv); a.download='ia_report.csv'; a.click();
+    toast('CSV downloaded','success');
+  };
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">Reports</h1>
+          <p style={{color:'var(--muted)',fontSize:14,marginTop:2}}>Generate and download reports</p>
+        </div>
+        <div className="flex gap-2">
+          <select className="input" style={{maxWidth:160}} value={semester} onChange={e=>setSemester(e.target.value)}>
+            <option value="">All Semesters</option>
+            {[1,2,3,4,5,6].map(n=><option key={n} value={n}>Semester {n}</option>)}
+          </select>
+          <button className="btn btn-ghost" onClick={generate} disabled={loading}>{loading?'…':'Refresh'}</button>
+          <button className="btn btn-success" onClick={exportCSV}>↓ CSV</button>
+        </div>
+      </div>
+
+      {reports.map(r=>(
+        <div key={r.studentId} className="card" style={{overflow:'hidden'}}>
+          <div className="flex items-center justify-between flex-wrap gap-2" style={{padding:'14px 20px',borderBottom:'1px solid var(--border)',background:'rgba(42,42,56,0.3)'}}>
+            <div>
+              <span style={{fontWeight:600}}>{r.studentName}</span>
+              <span className="mono text-xs ml-3" style={{color:'var(--accent)'}}>{r.studentId}</span>
+              <span style={{fontSize:12,color:'var(--muted)',marginLeft:12}}>{r.department} · Sem {r.semester}</span>
+            </div>
+            <div>
+              <span className="mono text-xs" style={{color:'var(--muted)'}}>OVERALL: </span>
+              <span className="mono" style={{fontWeight:700,color:'var(--accent3)'}}>{r.overallAverage}</span>
+            </div>
+          </div>
+          <div className="table-wrap">
+            <table>
+              <thead><tr><th>Subject</th><th>IA1</th><th>IA2</th><th>IA3</th><th>Average</th><th>Result</th></tr></thead>
+              <tbody>
+                {r.marks.length===0 && <tr><td colSpan={6} style={{color:'var(--muted)',fontSize:13,padding:'12px 14px'}}>No marks entered</td></tr>}
+                {r.marks.map((m,i)=>(
+                  <tr key={i} style={m.result==='Fail'?{background:'rgba(248,113,113,0.06)'}:{}}>
+                    <td><div style={{fontWeight:500,fontSize:13}}>{m.subjectName}</div><div className="mono" style={{fontSize:11,color:'var(--muted)'}}>{m.subjectCode}</div></td>
+                    {[m.ia1,m.ia2,m.ia3].map((v,j)=><td key={j} className="mono" style={{color:v<40?'var(--fail)':'inherit'}}>{v}</td>)}
+                    <td><span className="mono" style={{fontWeight:700,color:m.average>=40?'var(--pass)':'var(--fail)'}}>{m.average}</span></td>
+                    <td><span className={`badge ${m.result==='Pass'?'badge-pass':'badge-fail'}`}>{m.result}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── MAIN APP ───────────────────────────────────────────────────────────────
+function App() {
+  const [user, setUser] = useState(null);
+  const [page, setPage] = useState('dashboard');
+  const [toasts, setToasts] = useState([]);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const toast = (msg, type='success') => {
+    const id = Date.now();
+    setToasts(t=>[...t,{id,msg,type}]);
+    setTimeout(()=>setToasts(t=>t.filter(x=>x.id!==id)),3200);
+  };
+
+  const logout = () => { setUser(null); setPage('dashboard'); };
+
+  if(!user) return <Login onLogin={u=>{setUser(u); setPage('dashboard');}}/>;
+
+  const renderPage = () => {
+    switch(page) {
+      case 'dashboard': return user.role==='student' ? <StudentDashboard user={user} toast={toast}/> : user.role==='faculty' ? <MarksEntry user={user} toast={toast}/> : <AdminDashboard toast={toast}/>;
+      case 'students': return <StudentsPage toast={toast}/>;
+      case 'faculty': return <FacultyPage toast={toast}/>;
+      case 'subjects': return <SubjectsPage toast={toast}/>;
+      case 'marks': return <AllMarks toast={toast}/>;
+      case 'marks-entry': return <MarksEntry user={user} toast={toast}/>;
+      case 'analytics': return <AnalyticsPage user={user}/>;
+      case 'reports': return <ReportsPage toast={toast}/>;
+      default: return <div>Page not found</div>;
+    }
+  };
+
+  return (
+    <div style={{display:'flex',height:'100vh',overflow:'hidden'}}>
+      {/* Sidebar desktop */}
+      <div style={{width:220,flexShrink:0,borderRight:'1px solid var(--border)',background:'var(--surface)',height:'100vh',overflowY:'auto'}} className="hidden md:block">
+        <Sidebar user={user} page={page} setPage={p=>{setPage(p);setMenuOpen(false);}} onLogout={logout}/>
+      </div>
+
+      {/* Mobile menu */}
+      {menuOpen && (
+        <div className="md:hidden" style={{position:'fixed',inset:0,zIndex:40,display:'flex'}}>
+          <div style={{width:220,background:'var(--surface)',borderRight:'1px solid var(--border)',height:'100vh',overflowY:'auto'}}>
+            <Sidebar user={user} page={page} setPage={p=>{setPage(p);setMenuOpen(false);}} onLogout={logout}/>
+          </div>
+          <div style={{flex:1,background:'rgba(0,0,0,0.5)'}} onClick={()=>setMenuOpen(false)}/>
+        </div>
+      )}
+
+      {/* Main content */}
+      <div style={{flex:1,overflow:'auto',display:'flex',flexDirection:'column'}}>
+        {/* Mobile header */}
+        <div className="md:hidden flex items-center justify-between p-4" style={{borderBottom:'1px solid var(--border)',background:'var(--surface)',position:'sticky',top:0,zIndex:10}}>
+          <button onClick={()=>setMenuOpen(true)} style={{background:'none',border:'none',color:'var(--text)',fontSize:20,cursor:'pointer'}}>☰</button>
+          <span className="mono text-xs" style={{color:'var(--muted)'}}>IA SYSTEM · {user.role.toUpperCase()}</span>
+          <span className="mono text-xs" style={{color:'var(--accent)'}}>{user.id}</span>
+        </div>
+
+        <main style={{flex:1,padding:'clamp(16px,3vw,32px)',maxWidth:1100,width:'100%',margin:'0 auto'}}>
+          {renderPage()}
+        </main>
+      </div>
+
+      {/* Toasts */}
+      <div style={{position:'fixed',bottom:24,right:24,zIndex:100,display:'flex',flexDirection:'column',gap:8}}>
+        {toasts.map(t=><Toast key={t.id} msg={t.msg} type={t.type} onClose={()=>setToasts(prev=>prev.filter(x=>x.id!==t.id))}/>)}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
